@@ -96,6 +96,17 @@ module ActiveRecord
           end
         end
 
+        def table_structure(table_name)
+          result = do_system_execute("DESCRIBE TABLE `#{table_name}`", table_name)
+          data = result['data']
+
+          return data unless data.empty?
+
+          raise ActiveRecord::StatementInvalid,
+            "Could not find table '#{table_name}'"
+        end
+        alias column_definitions table_structure
+
         private
 
         def apply_format(sql, format)
@@ -139,21 +150,6 @@ module ActiveRecord
             ClickhouseColumn.new(field[0], default_value, type_metadata, field[1].include?('Nullable'), table_name, default_function)
           end
         end
-
-        protected
-
-        def table_structure(table_name)
-          result = do_system_execute("DESCRIBE TABLE `#{table_name}`", table_name)
-          data = result['data']
-
-          return data unless data.empty?
-
-          raise ActiveRecord::StatementInvalid,
-            "Could not find table '#{table_name}'"
-        end
-        alias column_definitions table_structure
-
-        private
 
         # Extracts the value from a PostgreSQL column default definition.
         def extract_value_from_default(default)
